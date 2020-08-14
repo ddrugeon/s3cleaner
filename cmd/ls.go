@@ -32,15 +32,38 @@ var lsCmd = &cobra.Command{
 	Long: `List S3 objects of a specified Bucket
 	
 	EXAMPLES:
+		---------------------------------------------------------------------------------------------
 		The following ls command lists objects from specified bucket. In this 
-		example, the use owns the bucket mybucket with the objects test.txt and prefix/test.txt.
+		example, the user owns the bucket mybucket with the objects test.txt and prefix/test.txt.
 	  
-		s3cleanup ls s3://mybucket
+		s3cleanup ls -b mybucket
 
 		Output:
-			PRE prefix/
-			test.txt
+			Name:          prefix/
+			Last modified: 2020-08-13 14:33:19 +0000 UTC
 
+			Name:          prefix/test.txt
+			Last modified: 2020-08-13 14:33:29 +0000 UTC
+
+			Name:          test.txt
+			Last modified: 2020-08-13 14:33:04 +0000 UTC
+
+		Found 3 items in bucket s3-ftp-sowee-prod
+
+		---------------------------------------------------------------------------------------------
+		The following ls command lists objects and all versions from specified bucket. In this 
+		example, the user owns the bucket mybucket with the object test.txt with two different versions.
+
+		s3cleanup ls -a -b mybucket
+
+		Output:
+			Name:          test.txt  (Latest Version) - Version ID:  a0RyXDUUC1qbrDzsZFyUhUJ8mxTiBEPb
+			Last modified: 2020-08-14 09:34:36 +0000 UTC
+
+			Name:          test.txt  - Version ID:  0AaGnbi3925aNKiP0pHXmPIuuiWqcEEm
+			Last modified: 2020-08-14 09:34:02 +0000 UTC
+
+			Found 2 versions in bucket test-emptybucket-ddh
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		currentProfile, _ := cmd.Flags().GetString("profile")
