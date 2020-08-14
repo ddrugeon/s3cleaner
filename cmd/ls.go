@@ -18,6 +18,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ddrugeon/s3cleaner/pkg/aws"
@@ -86,14 +87,37 @@ var lsCmd = &cobra.Command{
 		client := aws.NewClient(currentProfile, currentRegion)
 
 		if currentBucket == "" {
-			currentBucket = common.SelectBucket(client.GetBucketLists())
+			currentBucket = common.SelectBucket(client.GetBucketList())
 		}
 
+		var objects []aws.Object
+		var err error
+
 		if showAllVersions {
-			client.ListObjectVersions(currentBucket)
+			objects, err = client.ListObjectWithVersions(currentBucket)
 		} else {
-			client.ListObjects(currentBucket)
+			objects, err = client.ListObjects(currentBucket)
 		}
+
+		if err != nil {
+			common.ExitWithError("Unable to list objects from bucket %s:\n%v", currentBucket, err)
+		}
+
+		for _, item := range objects {
+			if item.VersionID != "" {
+				if item.IsLastVersion {
+					fmt.Println("Name:         ", item.Name, " (Latest Version) - Version ID: ", item.VersionID)
+				} else {
+					fmt.Println("Name:         ", item.Name, " - Version ID: ", item.VersionID)
+				}
+			} else {
+				fmt.Println("Name:         ", item.Name)
+			}
+			fmt.Println("Last modified:", item.LastModified)
+			fmt.Println("")
+		}
+		fmt.Println("Found", len(objects), "items in bucket", currentBucket)
+		fmt.Println("")
 	},
 }
 

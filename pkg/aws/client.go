@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
@@ -14,6 +14,14 @@ import (
 type Client struct {
 	session *session.Session
 	svc     *s3.S3
+}
+
+// Object represents a S3 Object
+type Object struct {
+	Name          string
+	LastModified  time.Time
+	IsLastVersion bool
+	VersionID     string
 }
 
 // NewClient returns a new AWS client instance with current configuration
@@ -37,7 +45,8 @@ func NewClient(profile string, region string) *Client {
 	return &client
 }
 
-func (client *Client) GetBucketLists() []string {
+// GetBucketList returns list of buckets present in current region and profile
+func (client *Client) GetBucketList() []string {
 	result, err := client.svc.ListBuckets(nil)
 	if err != nil {
 		common.ExitWithError("Unable to list buckets:\n\t %v", err)
@@ -51,36 +60,40 @@ func (client *Client) GetBucketLists() []string {
 	return buckets
 }
 
-func (client *Client) ListObjects(bucket string) {
+// ListObjects returns list of objects present in given bucket
+func (client *Client) ListObjects(bucket string) ([]Object, error) {
 	resp, err := client.svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(bucket)})
 	if err != nil {
-		common.ExitWithError("Unable to list objects from bucket %s:\n\t %v", bucket, err)
+		return nil, err
 	}
 
-	for _, item := range resp.Contents {
-		fmt.Println("Name:         ", *item.Key)
-		fmt.Println("Last modified:", *item.LastModified)
-		fmt.Println("")
+	objects := make([]Object, len(resp.Contents))
+	for index, item := range resp.Contents {
+		objects[index] = Object{
+			Name:         *item.Key,
+			LastModified: *item.LastModified,
+		}
 	}
-	fmt.Println("Found", len(resp.Contents), "items in bucket", bucket)
-	fmt.Println("")
+
+	return objects, nil
 }
 
-func (client *Client) ListObjectVersions(bucket string) {
+// ListObjectWithVersions returns list of objects present (with each version) in given bucket
+func (client *Client) ListObjectWithVersions(bucket string) ([]Object, error) {
 	resp, err := client.svc.ListObjectVersions(&s3.ListObjectVersionsInput{Bucket: aws.String(bucket)})
 	if err != nil {
-		common.ExitWithError("Unable to list objects from bucket %s:\n\t %v", bucket, err)
+		return nil, err
 	}
 
-	for _, item := range resp.Versions {
-		if *item.IsLatest {
-			fmt.Println("Name:         ", *item.Key, " (Latest Version) - Version ID: ", *item.VersionId)
-		} else {
-			fmt.Println("Name:         ", *item.Key, " - Version ID: ", *item.VersionId)
+	objects := make([]Object, len(resp.Versions))
+	for index, item := range resp.Versions {
+		objects[index] = Object{
+			Name:          *item.Key,
+			LastModified:  *item.LastModified,
+			IsLastVersion: *item.IsLatest,
+			VersionID:     *item.VersionId,
 		}
-		fmt.Println("Last modified:", *item.LastModified)
-		fmt.Println("")
 	}
-	fmt.Println("Found", len(resp.Versions), "versions in bucket", bucket)
-	fmt.Println("")
+
+	return objects, nil
 }

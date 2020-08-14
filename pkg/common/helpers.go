@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -123,4 +124,27 @@ func SelectBucket(buckets []string) string {
 func ExitWithError(msg string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, msg+"\n", args...)
 	os.Exit(1)
+}
+
+// ConfirmDeletion prompts user to confirm or not deletion
+func ConfirmDeletion() bool {
+	validate := func(input string) error {
+		if len(input) == 0 || !(strings.EqualFold(strings.ToLower(input), "y") || strings.EqualFold(strings.ToLower(input), "n")) {
+			return errors.New("Valid values are Y or N")
+		}
+
+		return nil
+	}
+	prompt := promptui.Prompt{
+		Validate: validate,
+		Label:    "Do you want to continue? [y/N]",
+		Default:  "N",
+	}
+	result, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return false
+	}
+
+	return strings.EqualFold(strings.ToLower(result), "y")
 }
