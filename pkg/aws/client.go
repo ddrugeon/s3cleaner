@@ -97,3 +97,18 @@ func (client *Client) ListObjectWithVersions(bucket string) ([]Object, error) {
 
 	return objects, nil
 }
+
+// DeleteObjects delete specified objects from given bucket
+func (client *Client) DeleteObjects(items []Object, bucket string) error {
+
+	var err error
+	for _, item := range items {
+		if item.VersionID != "" {
+			_, err = client.svc.DeleteObject(&s3.DeleteObjectInput{Bucket: &bucket, Key: &item.Name, VersionId: &item.VersionID})
+		} else {
+			_, err = client.svc.DeleteObject(&s3.DeleteObjectInput{Bucket: &bucket, Key: &item.Name})
+		}
+	}
+
+	return err
+}

@@ -26,46 +26,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// lsCmd represents the ls command
-var lsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List S3 objects of a specified Bucket",
-	Long: `List S3 objects of a specified Bucket
-	
-	EXAMPLES:
-		---------------------------------------------------------------------------------------------
-		The following ls command lists objects from specified bucket. In this 
-		example, the user owns the bucket mybucket with the objects test.txt and prefix/test.txt.
-	  
-		s3cleanup ls -b mybucket
-
-		Output:
-			Name:          prefix/
-			Last modified: 2020-08-13 14:33:19 +0000 UTC
-
-			Name:          prefix/test.txt
-			Last modified: 2020-08-13 14:33:29 +0000 UTC
-
-			Name:          test.txt
-			Last modified: 2020-08-13 14:33:04 +0000 UTC
-
-		Found 3 items in bucket s3-ftp-sowee-prod
-
-		---------------------------------------------------------------------------------------------
-		The following ls command lists objects and all versions from specified bucket. In this 
-		example, the user owns the bucket mybucket with the object test.txt with two different versions.
-
-		s3cleanup ls -a -b mybucket
-
-		Output:
-			Name:          test.txt  (Latest Version) - Version ID:  a0RyXDUUC1qbrDzsZFyUhUJ8mxTiBEPb
-			Last modified: 2020-08-14 09:34:36 +0000 UTC
-
-			Name:          test.txt  - Version ID:  0AaGnbi3925aNKiP0pHXmPIuuiWqcEEm
-			Last modified: 2020-08-14 09:34:02 +0000 UTC
-
-			Found 2 versions in bucket test-emptybucket-ddh
-	`,
+// delCmd represents the del command
+var delCmd = &cobra.Command{
+	Use:   "del",
+	Short: "Delete S3 objects of a specified Bucket",
+	Long:  `"Delete S3 objects of a specified Bucket`,
 	Run: func(cmd *cobra.Command, args []string) {
 		currentProfile, _ := cmd.Flags().GetString("profile")
 		currentRegion, _ := cmd.Flags().GetString("region")
@@ -113,14 +78,21 @@ var lsCmd = &cobra.Command{
 			} else {
 				fmt.Println("Name:         ", item.Name)
 			}
-			fmt.Println("Last modified:", item.LastModified)
-			fmt.Println("")
 		}
-		fmt.Println("Found", len(objects), "items in bucket", currentBucket)
+		fmt.Println("Delete", len(objects), "items in bucket", currentBucket)
 		fmt.Println("")
+
+		if common.ConfirmDeletion() {
+			err := client.DeleteObjects(objects, currentBucket)
+			if err != nil {
+				common.ExitWithError("Unable to delete objects from bucket %s:\n%v", currentBucket, err)
+			}
+		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(lsCmd)
+	rootCmd.AddCommand(delCmd)
+
+	lsCmd.Flags().BoolP("dry-run", "d", false, "Do not delete files or version")
 }

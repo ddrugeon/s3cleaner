@@ -49,6 +49,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("profile", "p", "", "Use a specific profile from your AWS credential file.")
 	rootCmd.PersistentFlags().StringP("region", "r", "eu-west-1", "The region to use. Overrides config/env settings.")
 	rootCmd.PersistentFlags().StringP("bucket", "b", "", "The Bucket name to use.")
+	rootCmd.PersistentFlags().BoolP("all", "a", false, "All object versions are also included.")
 }
 
 // initConfig reads in config file and ENV variables if set.
